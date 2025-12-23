@@ -1,0 +1,104 @@
+cat > pyproject.toml << 'EOF'
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arachne"
+version = "0.1.0"
+description = "Autonomous Dark Web Discovery and Classification System"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "GPL-3.0-or-later"}
+authors = [
+    {name = "Dark Web Research Team", email = "research@example.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Security",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "stem>=1.8.2",
+    "requests>=2.31.0",
+    "selenium>=4.15.0",
+    "beautifulsoup4>=4.12.2",
+    "lxml>=4.9.3",
+    "pandas>=2.1.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.0.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "python-multipart>=0.0.6",
+    "pydantic>=2.5.0",
+    "python-dateutil>=2.8.2",
+    "loguru>=0.7.2",
+    "python-dotenv>=1.0.0",
+    "tqdm>=4.66.0",
+    "click>=8.1.7",
+    "joblib>=1.3.0",
+    "nltk>=3.8.1",
+    "langdetect>=1.0.9",
+    "hashids>=1.3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.11.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.0",
+    "isort>=5.12.0",
+    "pre-commit>=3.5.0",
+]
+tor = [
+    "tor>=0.4.7",
+]
+ml = [
+    "tensorflow>=2.14.0",
+    "torch>=2.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/arachne"
+Repository = "https://github.com/yourusername/arachne.git"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+EOF
