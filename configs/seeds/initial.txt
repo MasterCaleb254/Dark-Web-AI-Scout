@@ -1,0 +1,15 @@
+# Initial seed list of legitimate dark web sites
+# These are known privacy services and libraries
+
+# Privacy Services
+http://privacy2zbidut4m4jyj3ksdqidzkw3uoip2vhvhbvwxbqux5xy5obyd.onion
+http://privacy3ya4ot3k4kqfrnfgzgnz5m5m2l2qodjbt7o45n2vnuwn5tad.onion
+
+# Digital Libraries
+http://library3fynbw5zhrhi2v6oyv3aeyv7r2okqj2mxfdisfcac3xcf7vad.onion
+http://library4fynbw5zhrhi2v6oyv3aeyv7r2okqj2mxfdisfcac3xcf7vad.onion
+
+# Secure Communication
+http://securedrop5v4cq3tchrgcx2pzzaxn5qnjwf7i6e6ef2dj7yebd6y2qd.onion
+
+# Note: These are example patterns. Replace with actual known legitimate sites.

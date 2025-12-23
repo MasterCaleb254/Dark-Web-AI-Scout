@@ -1,0 +1,53 @@
+# Arachne Configuration
+version: "0.1.0"
+
+# Tor Configuration
+tor:
+  socks_port: 9050
+  control_port: 9051
+  circuit_count: 10
+  circuit_lifetime_minutes: 10
+  max_requests_per_circuit: 100
+  entry_guards: 3
+  
+# Discovery Configuration
+discovery:
+  max_depth: 3
+  max_pages_per_site: 50
+  request_delay_ms:
+    min: 1000
+    max: 5000
+  concurrent_requests: 5
+  user_agents_file: "configs/user_agents.txt"
+  
+# Classification Configuration
+classification:
+  confidence_threshold: 0.7
+  illegal_patterns_file: "configs/illegal_patterns.txt"
+  known_honeypots_file: "configs/known_honeypots.txt"
+  
+# Safety Configuration
+safety:
+  max_content_size_mb: 10
+  image_filtering: true
+  illegal_content_filter: strict
+  air_gap_mode: true
+  
+# Database Configuration
+database:
+  postgres:
+    host: "localhost"
+    port: 5432
+    name: "arachne"
+    user: "arachne"
+    password: ""  # Set via environment variable
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+    
+# Monitoring Configuration
+monitoring:
+  log_level: "INFO"
+  metrics_port: 9090
+  health_check_interval: 60

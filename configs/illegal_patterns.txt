@@ -1,0 +1,26 @@
+# DO NOT MODIFY WITHOUT LEGAL REVIEW
+# This file contains regex patterns for illegal content detection
+# Patterns are case-insensitive and match partial strings
+
+# Category 1: Child Exploitation Material
+/child.*(abuse|exploit|porn)/i
+/loli.*(con|shota)/i
+/cp.*(material|content)/i
+
+# Category 2: Violence/Gore
+/(snuff|real.*death|murder.*video)/i
+/gore.*(forum|site|collection)/i
+
+# Category 3: Weapons/Explosives
+/(weapon.*sale|gun.*market|firearm.*trade)/i
+/explosive.*(recipe|manual|guide)/i
+
+# Category 4: Drugs
+/(drug.*market|opioid.*sale|fentanyl)/i
+/silk.*road/i
+
+# Category 5: Fraud Services
+/(credit.*card.*fraud|identity.*theft)/i
+/ddos.*(service|hire)/i
+
+# Note: This is a minimal set. Actual deployment requires legal consultation.
