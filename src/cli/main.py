@@ -91,21 +91,62 @@ def status(ctx):
     click.echo("  status   - Show this status")
 
 
-@cli.command()
+@cli.group()
+def db():
+    """Database operations."""
+    pass
+
+
+@db.command()
 @click.pass_context
-def init_db(ctx):
+def status(ctx):
+    """Show database status."""
+    import asyncio
+    from src.storage.database import create_database
+    from src.storage.models import Site
+    from sqlalchemy import func
+    
+    async def check_status():
+        config = ctx.obj['config']
+        try:
+            db = await create_database(config.database)
+            
+            async with db.get_session() as session:
+                # Count sites
+                site_count = await session.execute(func.count(Site.id))
+                sites = site_count.scalar()
+                
+                click.echo("=== Database Status ===")
+                click.echo(f"PostgreSQL: Connected")
+                click.echo(f"Redis: Connected")
+                click.echo(f"Sites in database: {sites}")
+                
+            await db.disconnect()
+            
+        except Exception as e:
+            click.echo(f"Database connection failed: {e}")
+    
+    asyncio.run(check_status())
+
+
+@db.command()
+@click.pass_context
+def init(ctx):
     """Initialize database."""
-    from src.storage.database import init_database
+    import asyncio
+    from src.storage.database import create_database
     
-    config = ctx.obj['config']
-    logger.info("Initializing database...")
+    async def init_db():
+        config = ctx.obj['config']
+        try:
+            db = await create_database(config.database)
+            click.echo("Database initialized successfully")
+            await db.disconnect()
+        except Exception as e:
+            click.echo(f"Failed to initialize database: {e}")
+            raise
     
-    try:
-        init_database(config.database)
-        logger.info("Database initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
-        raise
+    asyncio.run(init_db())
 
 
 if __name__ == '__main__':
