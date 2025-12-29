@@ -14,11 +14,40 @@ tor:
 discovery:
   max_depth: 3
   max_pages_per_site: 50
+  concurrent_requests: 5
   request_delay_ms:
     min: 1000
     max: 5000
-  concurrent_requests: 5
   user_agents_file: "configs/user_agents.txt"
+  seeds_file: "configs/seeds/initial.txt"
+  
+  # Social listening
+  telegram:
+    enabled: false
+    api_id: ""
+    api_hash: ""
+    channels: []
+  
+  irc:
+    enabled: false
+    servers:
+      - host: "irc.example.com"
+        port: 6667
+        nickname: "arachne_bot"
+    channels: []
+  
+  twitter:
+    enabled: false
+    bearer_token: ""
+    search_terms: []
+  
+  # Directory sync
+  directories:
+    - "https://onion.ly"
+    - "https://onion.cab"
+  
+  feeds:
+    - "https://example.com/feed.rss"
   
 # Classification Configuration
 classification:
