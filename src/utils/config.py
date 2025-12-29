@@ -6,7 +6,8 @@ import os
 import yaml
 from typing import Dict, Any, Optional
 from pathlib import Path
-from pydantic import BaseSettings, Field, validator
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings
 
 
 class TorConfig(BaseSettings):
