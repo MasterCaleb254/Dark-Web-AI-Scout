@@ -282,5 +282,5 @@ class AuditLog(Base):
     
     __table_args__ = (
         Index('idx_audit_component_action', 'component', 'action'),
-        Index('idx_audit_timestamp_status', 'timestamp', 'status'),
+        Index('idx_audit_timestamp_status', 'created_at', 'status'),
     )
