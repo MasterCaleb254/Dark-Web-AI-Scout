@@ -31,14 +31,8 @@ async def init_database():
         # Create database connection
         db = await create_database(config.database)
         
-        async with db.get_session() as session:
-            # Create tables (already done in connect, but ensure)
-            await session.run_sync(Base.metadata.create_all)
-            
-            # Insert any initial data here
-            # Example: Insert default system user, configuration, etc.
-            
-            await session.commit()
+        # Tables are already created in db.connect(), so no need to create again
+        logger.info("Database tables created successfully")
         
         logger.info("Database initialized successfully")
         
