@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, 
-    DateTime, JSON, Text, ForeignKey, Enum, UniqueConstraint
+    DateTime, JSON, Text, ForeignKey, Enum, UniqueConstraint, Index
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import relationship, declarative_base
@@ -54,7 +54,7 @@ class Site(Base):
     
     # Metadata
     tags = Column(ARRAY(String))
-    metadata = Column(JSONB)
+    extra_metadata = Column(JSONB)
     
     # Relationships
     discovery_results = relationship("DiscoveryResult", back_populates="site", cascade="all, delete-orphan")
@@ -190,7 +190,7 @@ class CrawlJob(Base):
     completed_at = Column(DateTime)
     
     # Metadata
-    metadata = Column(JSONB)
+    extra_metadata = Column(JSONB)
     
     # Relationship
     site = relationship("Site", back_populates="crawl_jobs")
