@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from sqlalchemy import (
     Column, Integer, String, Boolean, Float, 
-    DateTime, JSON, Text, ForeignKey, Enum, UniqueConstraint, Index
+    DateTime, JSON, Text, ForeignKey, Enum, UniqueConstraint, Index, PrimaryKeyConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import relationship, declarative_base
@@ -64,7 +64,6 @@ class Site(Base):
     
     __table_args__ = (
         UniqueConstraint('title_hash', 'language', name='uq_title_language'),
-        {'postgresql_partition_by': 'HASH(onion_address)'}
     )
     
     def __repr__(self):
