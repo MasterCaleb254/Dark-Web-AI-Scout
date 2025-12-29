@@ -4,6 +4,7 @@ Database connection and repository pattern implementation.
 
 import asyncio
 import contextlib
+import uuid
 from typing import AsyncGenerator, Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from sqlalchemy import select, update, delete, and_, or_, func
