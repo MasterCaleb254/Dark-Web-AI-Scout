@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: arachne-postgres
+    environment:
+      POSTGRES_DB: arachne
+      POSTGRES_USER: arachne
+      POSTGRES_PASSWORD: arachne_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./configs/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arachne"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres -c max_connections=200
+               -c shared_buffers=256MB
+               -c effective_cache_size=1GB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.9
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+
+  redis:
+    image: redis:7-alpine
+    container_name: arachne-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      redis-server --appendonly yes
+                   --maxmemory 256mb
+                   --maxmemory-policy allkeys-lru
+
+  tor-proxy:
+    image: dperson/torproxy:latest
+    container_name: arachne-tor
+    ports:
+      - "9050:9050"  # SOCKS proxy
+      - "9051:9051"  # Control port
+    environment:
+      TOR_Password: "your_tor_password"
+    volumes:
+      - tor_data:/var/lib/tor
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  tor_data:
+
+networks:
+  default:
+    name: arachne-network
