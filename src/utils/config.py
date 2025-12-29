@@ -66,6 +66,7 @@ class Config(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        extra = "ignore"  # Allow extra fields
 
 
 def load_config(config_path: Optional[str] = None) -> Config:
