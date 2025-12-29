@@ -19,6 +19,9 @@ class TorConfig(BaseSettings):
     circuit_lifetime_minutes: int = Field(10, env="TOR_CIRCUIT_LIFETIME")
     max_requests_per_circuit: int = Field(100, env="TOR_MAX_REQUESTS")
     entry_guards: int = Field(3, env="TOR_ENTRY_GUARDS")
+    
+    class Config:
+        extra = "ignore"
 
 
 class DiscoveryConfig(BaseSettings):
@@ -29,6 +32,9 @@ class DiscoveryConfig(BaseSettings):
     request_delay_min_ms: int = Field(1000, env="DISCOVERY_DELAY_MIN")
     request_delay_max_ms: int = Field(5000, env="DISCOVERY_DELAY_MAX")
     user_agents_file: str = Field("configs/user_agents.txt", env="USER_AGENTS_FILE")
+    
+    class Config:
+        extra = "ignore"
 
 
 class SafetyConfig(BaseSettings):
@@ -37,6 +43,9 @@ class SafetyConfig(BaseSettings):
     block_illegal_content: bool = Field(True, env="SAFETY_BLOCK_ILLEGAL")
     quarantine_suspicious: bool = Field(True, env="SAFETY_QUARANTINE")
     scan_interval_hours: int = Field(24, env="SAFETY_SCAN_INTERVAL")
+    
+    class Config:
+        extra = "ignore"
 
 
 class DatabaseConfig(BaseSettings):
@@ -49,6 +58,9 @@ class DatabaseConfig(BaseSettings):
     redis_host: str = Field("localhost", env="REDIS_HOST")
     redis_port: int = Field(6379, env="REDIS_PORT")
     redis_db: int = Field(0, env="REDIS_DB")
+    
+    class Config:
+        extra = "ignore"
 
 
 class Config(BaseSettings):
