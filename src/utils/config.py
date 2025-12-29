@@ -45,7 +45,7 @@ class DatabaseConfig(BaseSettings):
     postgres_port: int = Field(5432, env="POSTGRES_PORT")
     postgres_db: str = Field("arachne", env="POSTGRES_DB")
     postgres_user: str = Field("arachne", env="POSTGRES_USER")
-    postgres_password: str = Field("your_password", env="POSTGRES_PASSWORD")
+    postgres_password: str = Field("arachne_password", env="POSTGRES_PASSWORD")
     redis_host: str = Field("localhost", env="REDIS_HOST")
     redis_port: int = Field(6379, env="REDIS_PORT")
     redis_db: int = Field(0, env="REDIS_DB")
