@@ -106,6 +106,17 @@ class LinkSpider:
         ]
         return random.choice(user_agents)
     
+    def _get_headers(self) -> Dict[str, str]:
+        """Get HTTP headers for requests."""
+        return {
+            'User-Agent': self.user_agent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+    
     async def crawl_site(
         self, 
         start_url: str, 
@@ -219,24 +230,14 @@ class LinkSpider:
         
         try:
             # Use HTTP session for simple requests
-            async with self.tor_manager.get_http_session(self.circuit) as session:
+            with self.tor_manager.get_http_session(self.circuit) as session:
                 # Set timeout
                 session.timeout = self.timeout
-                
-                # Add headers
-                headers = {
-                    'User-Agent': self.user_agent,
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                }
                 
                 # Make request
                 response = session.get(
                     url, 
-                    headers=headers, 
+                    headers=self._get_headers(), 
                     allow_redirects=True,
                     timeout=self.timeout
                 )

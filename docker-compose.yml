@@ -51,7 +51,7 @@ services:
       - "9050:9050"  # SOCKS proxy
       - "9051:9051"  # Control port
     environment:
-      TOR_Password: "your_tor_password"
+      PASSWORD: "arachne_tor_password"
     volumes:
       - tor_data:/var/lib/tor
     restart: unless-stopped

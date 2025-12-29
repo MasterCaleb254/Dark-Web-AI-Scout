@@ -316,7 +316,8 @@ class DiscoveryOrchestrator:
         
         async with self.database.get_session() as session:
             # Get all sites from database
-            stmt = "SELECT onion_address FROM sites"
+            from sqlalchemy import text
+            stmt = text("SELECT onion_address FROM sites")
             result = await session.execute(stmt)
             rows = result.fetchall()
             

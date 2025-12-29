@@ -5,6 +5,7 @@ version: "0.1.0"
 tor:
   socks_port: 9050
   control_port: 9051
+  control_password: "arachne_tor_password"
   circuit_count: 10
   circuit_lifetime_minutes: 10
   max_requests_per_circuit: 100
