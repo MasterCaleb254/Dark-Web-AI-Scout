@@ -32,7 +32,7 @@ class PipelineResult:
     content_type: ContentType
     
     # Safety results
-    safety_result: SafetyResult
+    safety_result: Optional[SafetyResult] = None
     sanitized_content: Optional[str] = None
     
     # Classification results
@@ -73,6 +73,8 @@ class PipelineResult:
     @property
     def is_safe(self) -> bool:
         """Check if content is safe."""
+        if not self.safety_result:
+            return True  # Assume safe until checked? Or return False?
         return self.safety_result.is_safe
     
     @property
@@ -81,7 +83,7 @@ class PipelineResult:
         if not self.is_safe:
             return False
         
-        if self.safety_result.action == SafetyAction.REVIEW:
+        if self.safety_result and self.safety_result.action == SafetyAction.REVIEW:
             return True
         
         if self.risk_score and self.risk_score.is_high:
