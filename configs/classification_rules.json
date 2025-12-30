@@ -1,0 +1,88 @@
+{
+    "forum": [
+        {
+            "patterns": [
+                "\\b(?:forum|board|discussion|thread|post|topic)\\b",
+                "\\b(?:register|login|members|user|profile)\\b",
+                "\\b(?:category|section|subforum)\\b"
+            ],
+            "weight": 0.8,
+            "min_matches": 2,
+            "description": "Forum indicators"
+        }
+    ],
+    "market": [
+        {
+            "patterns": [
+                "\\b(?:market|shop|store|vendor|product|item|listing)\\b",
+                "\\b(?:price|cost|usd|btc|bitcoin|payment)\\b",
+                "\\b(?:cart|checkout|purchase|buy|sell|order)\\b"
+            ],
+            "weight": 0.85,
+            "min_matches": 2,
+            "description": "Marketplace indicators"
+        }
+    ],
+    "service": [
+        {
+            "patterns": [
+                "\\b(?:service|hosting|vpn|proxy|mixer|tumbler)\\b",
+                "\\b(?:secure|private|anonymous|encrypted)\\b",
+                "\\b(?:price|plan|subscription|monthly|yearly)\\b"
+            ],
+            "weight": 0.7,
+            "min_matches": 2,
+            "description": "Service indicators"
+        }
+    ],
+    "library": [
+        {
+            "patterns": [
+                "\\b(?:library|archive|collection|repository)\\b",
+                "\\b(?:book|document|paper|article|publication)\\b",
+                "\\b(?:download|pdf|epub|mobi|torrent)\\b"
+            ],
+            "weight": 0.8,
+            "min_matches": 2,
+            "description": "Library indicators"
+        }
+    ],
+    "blog": [
+        {
+            "patterns": [
+                "\\b(?:blog|post|article|entry|update)\\b",
+                "\\b(?:author|writer|posted|published|date)\\b",
+                "\\b(?:comment|reply|feedback)\\b"
+            ],
+            "weight": 0.75,
+            "min_matches": 2,
+            "description": "Blog indicators"
+        }
+    ],
+    "scam": [
+        {
+            "patterns": [
+                "\\b(?:free|easy|fast|guaranteed|100%|legit)\\b",
+                "\\b(?:million|billion|rich|wealth|fortune)\\b",
+                "\\b(?:limited|offer|discount|bonus|extra)\\b"
+            ],
+            "weight": 0.6,
+            "min_matches": 3,
+            "scam_indicators": true,
+            "description": "Scam indicators"
+        }
+    ],
+    "honeypot": [
+        {
+            "patterns": [
+                "\\b(?:login|signin|authentication|verify)\\b",
+                "\\b(?:captcha|security|check|human)\\b",
+                "\\b(?:please|enter|submit|continue)\\b"
+            ],
+            "weight": 0.5,
+            "min_matches": 2,
+            "honeypot_indicators": true,
+            "description": "Honeypot indicators"
+        }
+    ]
+}
