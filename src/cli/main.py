@@ -6,6 +6,7 @@ import click
 import asyncio
 from typing import Optional, List
 from pathlib import Path
+import json
 
 from src.utils.logger import setup_logger, get_logger
 from src.utils.config import load_config
@@ -13,6 +14,8 @@ from src.core.tor_manager import create_tor_manager
 from src.storage.database import create_database
 from src.discovery.orchestrator import DiscoveryOrchestrator, DiscoveryConfig, DiscoveryMode
 from src.discovery.harvester import OnionHarvester
+from src.classification.pipeline import ClassificationPipeline
+from src.classification.storage import ClassificationStorage
 
 logger = get_logger(__name__)
 
@@ -264,6 +267,285 @@ def test_crawl(ctx, url: str, depth: int):
     asyncio.run(test())
 
 
+@cli.group()
+def classify():
+    """Classification commands."""
+    pass
+
+
+@classify.command()
+@click.option('--site-id', help='Site ID to classify')
+@click.option('--url', help='URL to classify (for testing)')
+@click.option('--content-file', help='File with content to classify')
+@click.option('--batch', is_flag=True, help='Batch classify all unclassified sites')
+@click.option('--limit', default=100, help='Maximum sites to classify')
+@click.option('--output', '-o', help='Output file for results')
+@click.pass_context
+def run(ctx, site_id: Optional[str], url: Optional[str], content_file: Optional[str], 
+        batch: bool, limit: int, output: Optional[str]):
+    """Run classification on sites."""
+    config = ctx.obj['config']
+    
+    async def run_classification():
+        # Create database connection
+        db = await create_database(config.database)
+        storage = ClassificationStorage(db)
+        
+        # Create classification pipeline
+        pipeline = ClassificationPipeline()
+        
+        if site_id:
+            # Classify specific site from database
+            async with db.get_session() as session:
+                from src.storage.models import Site
+                from sqlalchemy import select
+                
+                stmt = select(Site).where(Site.id == site_id)
+                result = await session.execute(stmt)
+                site = result.scalar_one_or_none()
+                
+                if not site:
+                    click.echo(f"Site {site_id} not found")
+                    return
+                
+                # TODO: Fetch site content and classify
+                click.echo(f"Classifying site: {site.onion_address}")
+                # This would require fetching content first
+                
+        elif url:
+            # Classify specific URL (test mode)
+            click.echo(f"Testing classification for: {url}")
+            
+            # Get content (for testing, we'd need to fetch it)
+            content = f"Test content for {url}"
+            
+            result = await pipeline.process(
+                url=url,
+                content=content,
+                content_type_hint='text/html',
+            )
+            
+            # Display results
+            _display_classification_result(result)
+            
+            # Save to file if requested
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(result.to_dict(), f, indent=2, default=str)
+                click.echo(f"Results saved to {output}")
+        
+        elif content_file:
+            # Classify content from file
+            if Path(content_file).exists():
+                with open(content_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                result = await pipeline.process(
+                    url=f"file://{content_file}",
+                    content=content,
+                    content_type_hint='text/plain',
+                )
+                
+                _display_classification_result(result)
+                
+                if output:
+                    with open(output, 'w') as f:
+                        json.dump(result.to_dict(), f, indent=2, default=str)
+                    click.echo(f"Results saved to {output}")
+            else:
+                click.echo(f"File not found: {content_file}")
+        
+        elif batch:
+            # Batch classify unclassified sites
+            click.echo(f"Batch classifying up to {limit} sites...")
+            
+            sites = await storage.get_sites_needing_classification(limit=limit)
+            click.echo(f"Found {len(sites)} sites needing classification")
+            
+            # TODO: Implement batch classification with content fetching
+            # This would require integrating with discovery to fetch content
+            
+        else:
+            click.echo("Please specify --site-id, --url, --content-file, or --batch")
+        
+        # Display pipeline statistics
+        stats = pipeline.get_pipeline_stats()
+        click.echo("\n=== Pipeline Statistics ===")
+        click.echo(f"Processed: {stats['processed']}")
+        click.echo(f"Blocked: {stats['blocked']}")
+        click.echo(f"Classified: {stats['classified']}")
+        click.echo(f"Errors: {stats['errors']}")
+        click.echo(f"Avg time: {stats['avg_processing_time']:.2f}s")
+        
+        await db.disconnect()
+    
+    asyncio.run(run_classification())
+
+
+@classify.command()
+@click.pass_context
+def stats(ctx):
+    """Show classification statistics."""
+    config = ctx.obj['config']
+    
+    async def show_stats():
+        db = await create_database(config.database)
+        
+        async with db.get_session() as session:
+            # Get classification counts
+            stmt = """
+                SELECT 
+                    COUNT(*) as total,
+                    COUNT(CASE WHEN category IS NOT NULL THEN 1 END) as classified,
+                    COUNT(CASE WHEN requires_review = TRUE THEN 1 END) as needs_review,
+                    COUNT(CASE WHEN is_honeypot = TRUE THEN 1 END) as honeypots,
+                    COUNT(CASE WHEN risk_level = 'critical' THEN 1 END) as critical,
+                    COUNT(CASE WHEN risk_level = 'high' THEN 1 END) as high_risk
+                FROM sites
+            """
+            
+            result = await session.execute(stmt)
+            row = result.fetchone()
+            
+            click.echo("=== Classification Statistics ===")
+            click.echo(f"Total sites: {row[0]}")
+            click.echo(f"Classified: {row[1]}")
+            click.echo(f"Need review: {row[2]}")
+            click.echo(f"Honeypots: {row[3]}")
+            click.echo(f"Critical risk: {row[4]}")
+            click.echo(f"High risk: {row[5]}")
+            
+            # Get category distribution
+            stmt = """
+                SELECT category, COUNT(*) as count
+                FROM sites
+                WHERE category IS NOT NULL
+                GROUP BY category
+                ORDER BY count DESC
+            """
+            
+            result = await session.execute(stmt)
+            rows = result.fetchall()
+            
+            click.echo("\n=== Category Distribution ===")
+            for category, count in rows:
+                click.echo(f"  {category or 'Unknown'}: {count}")
+        
+        await db.disconnect()
+    
+    asyncio.run(show_stats())
+
+
+@classify.command()
+@click.option('--risk-level', 
+              type=click.Choice(['critical', 'high', 'medium', 'low']),
+              default='high',
+              help='Risk level to filter')
+@click.option('--limit', default=20, help='Maximum sites to show')
+@click.pass_context
+def risky(ctx, risk_level: str, limit: int):
+    """Show high-risk sites."""
+    config = ctx.obj['config']
+    
+    async def show_risky():
+        db = await create_database(config.database)
+        storage = ClassificationStorage(db)
+        
+        sites = await storage.get_high_risk_sites(risk_level=risk_level, limit=limit)
+        
+        click.echo(f"=== {risk_level.upper()} Risk Sites ===")
+        click.echo(f"Found {len(sites)} sites")
+        
+        for i, site in enumerate(sites, 1):
+            click.echo(f"\n{i}. {site['onion_address']}")
+            click.echo(f"   Category: {site.get('category', 'Unknown')}")
+            click.echo(f"   Risk: {site.get('risk_level', 'Unknown')} ({site.get('risk_score', 0):.2f})")
+            click.echo(f"   Status: {site.get('status', 'Unknown')}")
+            click.echo(f"   Last checked: {site.get('last_checked', 'Never')}")
+            
+            if site.get('requires_review'):
+                click.echo("   ⚠️  REQUIRES REVIEW")
+        
+        await db.disconnect()
+    
+    asyncio.run(show_risky())
+
+
+@classify.command()
+@click.option('--patterns-file', required=True, help='File with illegal patterns (JSON)')
+@click.pass_context
+def test_patterns(ctx, patterns_file: str):
+    """Test illegal content patterns."""
+    from src.classification.safety import IllegalContentDetector
+    
+    if not Path(patterns_file).exists():
+        click.echo(f"Patterns file not found: {patterns_file}")
+        return
+    
+    detector = IllegalContentDetector(patterns_file=patterns_file)
+    
+    click.echo("=== Pattern Testing ===")
+    click.echo("Enter text to test (Ctrl+D to exit):")
+    
+    try:
+        while True:
+            try:
+                line = input("> ")
+                if not line:
+                    continue
+                
+                result = detector.check_text(line)
+                
+                click.echo(f"  Action: {result.action.value}")
+                click.echo(f"  Confidence: {result.confidence:.2f}")
+                if result.flagged_categories:
+                    click.echo(f"  Categories: {', '.join(result.flagged_categories)}")
+                if result.risk_factors:
+                    click.echo(f"  Risk factors: {', '.join(result.risk_factors[:3])}")
+                click.echo()
+                
+            except EOFError:
+                break
+            except Exception as e:
+                click.echo(f"Error: {e}")
+    
+    except KeyboardInterrupt:
+        click.echo("\nExiting...")
+
+
+def _display_classification_result(result):
+    """Display classification result in readable format."""
+    click.echo("\n=== Classification Results ===")
+    click.echo(f"URL: {result.url}")
+    click.echo(f"Processing time: {result.processing_time:.2f}s")
+    
+    # Safety results
+    click.echo(f"\nSafety: {result.safety_result.action.value}")
+    click.echo(f"  Confidence: {result.safety_result.confidence:.2f}")
+    if result.safety_result.flagged_categories:
+        click.echo(f"  Flagged: {', '.join(result.safety_result.flagged_categories)}")
+    
+    # Classification results
+    if result.classification_result:
+        click.echo(f"\nClassification: {result.classification_result.category.value}")
+        click.echo(f"  Confidence: {result.classification_result.confidence:.2f}")
+        if result.classification_result.subcategory:
+            click.echo(f"  Subcategory: {result.classification_result.subcategory}")
+    
+    # Risk assessment
+    if result.risk_score:
+        click.echo(f"\nRisk: {result.risk_score.level.value} ({result.risk_score.score:.2f})")
+        click.echo(f"  Confidence: {result.risk_score.confidence:.2f}")
+        if result.risk_score.factors:
+            click.echo(f"  Factors: {', '.join([f.value for f in result.risk_score.factors[:3]])}")
+    
+    # Errors
+    if result.errors:
+        click.echo(f"\n⚠️  Errors: {len(result.errors)}")
+        for error in result.errors[:3]:
+            click.echo(f"  - {error}")
+
+
 @cli.command()
 @click.pass_context
 def status(ctx):
@@ -276,9 +558,10 @@ def status(ctx):
     click.echo(f"Tor SOCKS Port: {config.tor.socks_port}")
     click.echo(f"Discovery Depth: {getattr(config.discovery, 'max_depth', 'N/A')}")
     click.echo("\nCommands:")
-    click.echo("  discover - Discovery commands")
-    click.echo("  db       - Database operations")
-    click.echo("  status   - Show this status")
+    click.echo("  discover     - Discovery commands")
+    click.echo("  classify     - Classification commands")
+    click.echo("  db           - Database operations")
+    click.echo("  status       - Show this status")
 
 
 @cli.group()

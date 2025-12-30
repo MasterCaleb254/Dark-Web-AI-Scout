@@ -1,0 +1,31 @@
+{
+    "child_exploitation": [
+        "\\b(?:child|minor|underage|juvenile).{0,20}(?:abuse|exploit|porn|sex|nude)\\b",
+        "\\b(?:cp|loli|shota|csam)\\b",
+        "\\b(?:pre.?teen|tween|young.{0,10}girl|boy)\\b"
+    ],
+    "violence_gore": [
+        "\\b(?:snuff|real.{0,10}death|murder.{0,10}video|torture.{0,10}video)\\b",
+        "\\b(?:gore|graphic.{0,10}violence|brutal.{0,10}attack)\\b",
+        "\\b(?:human.{0,10}trafficking|organ.{0,10}harvesting)\\b"
+    ],
+    "weapons_explosives": [
+        "\\b(?:weapon.{0,10}sale|gun.{0,10}market|firearm.{0,10}trade)\\b",
+        "\\b(?:explosive.{0,10}recipe|bomb.{0,10}making|detonator)\\b",
+        "\\b(?:chemical.{0,10}weapon|bioweapon|nerve.{0,10}agent)\\b"
+    ],
+    "drugs_narcotics": [
+        "\\b(?:drug.{0,10}market|opioid.{0,10}sale|fentanyl.{0,10}purchase)\\b",
+        "\\b(?:silk.{0,10}road|dark.{0,10}market|drug.{0,10}vendor)\\b",
+        "\\b(?:cocaine|heroin|methamphetamine|mdma).{0,10}(?:sale|buy|vendor)\\b"
+    ],
+    "fraud_services": [
+        "\\b(?:credit.{0,10}card.{0,10}fraud|identity.{0,10}theft|bank.{0,10}login)\\b",
+        "\\b(?:ddos.{0,10}service|hack.{0,10}for.{0,10}hire|ransomware.{0,10}as.{0,10}service)\\b",
+        "\\b(?:counterfeit.{0,10}money|fake.{0,10}id|forged.{0,10}documents)\\b"
+    ],
+    "hate_speech": [
+        "\\b(?:racial.{0,10}slur|hate.{0,10}group|extremist.{0,10}propaganda)\\b",
+        "\\b(?:genocide.{0,10}promotion|ethnic.{0,10}cleansing|racial.{0,10}supremacy)\\b"
+    ]
+}
