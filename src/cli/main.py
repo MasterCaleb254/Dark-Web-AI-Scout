@@ -4,9 +4,11 @@ Command Line Interface for Arachne.
 
 import click
 import asyncio
+import uvicorn
 from typing import Optional, List
 from pathlib import Path
 import json
+import sys
 
 from src.utils.logger import setup_logger, get_logger
 from src.utils.config import load_config
@@ -620,6 +622,182 @@ def init(ctx):
             raise
     
     asyncio.run(init_db())
+
+
+@cli.group()
+def api():
+    """API server commands."""
+    pass
+
+
+@api.command()
+@click.option('--host', default='0.0.0.0', help='Host to bind to')
+@click.option('--port', default=8000, help='Port to bind to')
+@click.option('--reload', is_flag=True, help='Enable auto-reload (development)')
+@click.pass_context
+def serve(ctx, host: str, port: int, reload: bool):
+    """Start the API server."""
+    config = ctx.obj['config']
+    
+    logger.info(f"Starting API server on {host}:{port}")
+    
+    # Run uvicorn
+    uvicorn.run(
+        "src.api.main:app",
+        host=host,
+        port=port,
+        reload=reload,
+        log_level="info",
+    )
+
+
+@cli.group()
+def monitor():
+    """Monitoring commands."""
+    pass
+
+
+@monitor.command()
+@click.option('--interval', default=60, help='Check interval in seconds')
+@click.pass_context
+def health(ctx, interval: int):
+    """Start health monitoring."""
+    config = ctx.obj['config']
+    
+    async def run_monitoring():
+        from src.monitoring.health import HealthMonitor, DatabaseHealthCheck, SystemHealthCheck, TorHealthCheck
+        
+        # Create database connection
+        db = await create_database(config.database)
+        
+        # Create Tor manager
+        tor_manager = create_tor_manager(config.dict())
+        tor_manager.start()
+        
+        # Create health checks
+        checks = [
+            DatabaseHealthCheck(db, interval=30),
+            TorHealthCheck(tor_manager, interval=60),
+            SystemHealthCheck(interval=60),
+        ]
+        
+        # Create health monitor
+        monitor = HealthMonitor(checks)
+        
+        try:
+            # Run monitoring
+            await monitor.start(interval=interval)
+            
+            # Keep running until interrupted
+            while True:
+                await asyncio.sleep(1)
+                
+        except KeyboardInterrupt:
+            logger.info("Stopping health monitoring...")
+            await monitor.stop()
+            tor_manager.stop()
+            await db.disconnect()
+    
+    asyncio.run(run_monitoring())
+
+
+@monitor.command()
+@click.pass_context
+def status(ctx):
+    """Show current system status."""
+    config = ctx.obj['config']
+    
+    async def get_status():
+        import psutil
+        
+        db = await create_database(config.database)
+        
+        try:
+            # System stats
+            cpu_percent = psutil.cpu_percent(interval=1)
+            memory = psutil.virtual_memory()
+            disk = psutil.disk_usage('/')
+            
+            # Database stats
+            async with db.get_session() as session:
+                # Site counts
+                stmt = """
+                    SELECT 
+                        COUNT(*) as total,
+                        COUNT(CASE WHEN requires_review = TRUE THEN 1 END) as needs_review,
+                        COUNT(CASE WHEN is_honeypot = TRUE THEN 1 END) as honeypots
+                    FROM sites
+                """
+                result = await session.execute(stmt)
+                site_stats = dict(result.fetchone()._mapping)
+            
+            click.echo("=== System Status ===")
+            click.echo(f"CPU Usage: {cpu_percent:.1f}%")
+            click.echo(f"Memory Usage: {memory.percent:.1f}% ({memory.used / (1024**3):.1f} GB / {memory.total / (1024**3):.1f} GB)")
+            click.echo(f"Disk Usage: {disk.percent:.1f}% ({disk.used / (1024**3):.1f} GB / {disk.total / (1024**3):.1f} GB)")
+            click.echo(f"\n=== Database Status ===")
+            click.echo(f"Total Sites: {site_stats['total']}")
+            click.echo(f"Sites Needing Review: {site_stats['needs_review']}")
+            click.echo(f"Honeypots Detected: {site_stats['honeypots']}")
+        
+        finally:
+            await db.disconnect()
+    
+    asyncio.run(get_status())
+
+
+@cli.group()
+def system():
+    """System management commands."""
+    pass
+
+
+@system.command()
+@click.option('--workers', default=3, help='Number of worker processes')
+@click.pass_context
+def start(ctx, workers: int):
+    """Start the complete Arachne system."""
+    config = ctx.obj['config']
+    
+    async def run_system():
+        from src.orchestrator.scheduler import Scheduler
+        from src.discovery.orchestrator import DiscoveryOrchestrator
+        from src.classification.pipeline import ClassificationPipeline
+        
+        # Initialize components
+        tor_manager = create_tor_manager(config.dict())
+        tor_manager.start()
+        
+        db = await create_database(config.database)
+        
+        discovery_orchestrator = DiscoveryOrchestrator(tor_manager, db)
+        classification_pipeline = ClassificationPipeline()
+        
+        # Create scheduler
+        scheduler = Scheduler(
+            database=db,
+            discovery_orchestrator=discovery_orchestrator,
+            classification_pipeline=classification_pipeline,
+        )
+        
+        # Start scheduler
+        await scheduler.start(num_workers=workers)
+        
+        logger.info(f"Arachne system started with {workers} workers")
+        
+        try:
+            # Keep running until interrupted
+            while True:
+                await asyncio.sleep(1)
+                
+        except KeyboardInterrupt:
+            logger.info("Shutting down system...")
+            await scheduler.stop()
+            tor_manager.stop()
+            await db.disconnect()
+            logger.info("System stopped")
+    
+    asyncio.run(run_system())
 
 
 if __name__ == '__main__':
