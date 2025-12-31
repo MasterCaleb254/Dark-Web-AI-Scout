@@ -10,6 +10,8 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     networks:
       - arachne-network
     restart: unless-stopped
@@ -19,6 +21,8 @@ services:
     container_name: arachne-redis
     volumes:
       - redis_data:/data
+    ports:
+      - "6379:6379"
     networks:
       - arachne-network
     restart: unless-stopped
@@ -36,15 +40,15 @@ services:
 
   arachne-api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: arachne-api
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - TOR_PASSWORD=${TOR_PASSWORD}
     volumes:
-      - ./configs:/app/configs
-      - ./data:/app/data
+      - ../configs:/app/configs
+      - ../data:/app/data
     ports:
       - "8000:8000"
     depends_on:
@@ -58,15 +62,15 @@ services:
 
   arachne-scheduler:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: arachne-scheduler
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - TOR_PASSWORD=${TOR_PASSWORD}
     volumes:
-      - ./configs:/app/configs
-      - ./data:/app/data
+      - ../configs:/app/configs
+      - ../data:/app/data
     depends_on:
       - postgres
       - redis
