@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arachne Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            color: #60a5fa;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-card.critical {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .stat-card.warning {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .stat-card.healthy {
+            border-left: 4px solid #10b981;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        table {
+            width: 100%;
+            background-color: #1e293b;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        th {
+            background-color: #334155;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #334155;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #10b98120;
+            color: #10b981;
+        }
+        
+        .status-review {
+            background-color: #f59e0b20;
+            color: #f59e0b;
+        }
+        
+        .status-critical {
+            background-color: #ef444420;
+            color: #ef4444;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #2563eb;
+        }
+        
+        button.secondary {
+            background-color: #475569;
+        }
+        
+        button.secondary:hover {
+            background-color: #334155;
+        }
+        
+        .alert-banner {
+            background-color: #ef444420;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>🕷️ Arachne Dashboard</h1>
+                <span id="health-status" class="status-badge status-active">Healthy</span>
+            </div>
+            <div class="controls">
+                <button onclick="triggerDiscovery()">🔍 Run Discovery</button>
+                <button onclick="refreshData()">🔄 Refresh</button>
+            </div>
+        </header>
+        
+        <div id="alert-banner" class="alert-banner">
+            <strong>⚠️ System Alert:</strong> <span id="alert-message"></span>
+        </div>
+        
+        <div class="stats-grid" id="stats-grid">
+            <!-- Stats will be loaded here -->
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3>Site Categories</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Discovery Trend (7 days)</h3>
+                <canvas id="discoveryChart"></canvas>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h2>Recent Sites</h2>
+        </div>
+        
+        <table id="sites-table">
+            <thead>
+                <tr>
+                    <th>Onion Address</th>
+                    <th>Category</th>
+                    <th>Risk</th>
+                    <th>Status</th>
+                    <th>Last Checked</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sites will be loaded here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // API base URL
+        const API_BASE = 'http://localhost:8000';
+        
+        // Charts
+        let categoryChart = null;
+        let discoveryChart = null;
+        
+        // Load all data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshData();
+            // Refresh every 30 seconds
+            setInterval(refreshData, 30000);
+        });
+        
+        async function refreshData() {
+            try {
+                await Promise.all([
+                    loadHealthStatus(),
+                    loadStats(),
+                    loadSites(),
+                    loadCharts()
+                ]);
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                showAlert('Failed to load data from server');
+            }
+        }
+        
+        async function loadHealthStatus() {
+            const response = await fetch(`${API_BASE}/health`);
+            const health = await response.json();
+            
+            const statusElement = document.getElementById('health-status');
+            statusElement.textContent = health.overall;
+            statusElement.className = 'status-badge';
+            
+            if (health.overall === 'healthy') {
+                statusElement.classList.add('status-active');
+            } else if (health.overall === 'warning') {
+                statusElement.classList.add('status-review');
+            } else {
+                statusElement.classList.add('status-critical');
+            }
+            
+            // Check for critical alerts
+            const alertsResponse = await fetch(`${API_BASE}/alerts?limit=1`);
+            const alerts = await alertsResponse.json();
+            
+            if (alerts.alerts.length > 0 && alerts.alerts[0].severity === 'critical') {
+                showAlert(alerts.alerts[0].message);
+            } else {
+                hideAlert();
+            }
+        }
+        
+        async function loadStats() {
+            const response = await fetch(`${API_BASE}/stats`);
+            const stats = await response.json();
+            
+            const statsGrid = document.getElementById('stats-grid');
+            const siteStats = stats.site_statistics;
+            
+            const statsData = [
+                { label: 'Total Sites', value: siteStats.total_sites, class: 'healthy' },
+                { label: 'Classified', value: siteStats.classified_sites, class: 'healthy' },
+                { label: 'Need Review', value: siteStats.sites_needing_review, class: 'warning' },
+                { label: 'Honeypots', value: siteStats.honeypots, class: 'critical' },
+                { label: 'High Risk', value: siteStats.high_risk, class: 'warning' },
+                { label: 'Critical Risk', value: siteStats.critical_risk, class: 'critical' },
+            ];
+            
+            statsGrid.innerHTML = statsData.map(stat => `
+                <div class="stat-card ${stat.class}">
+                    <div class="stat-label">${stat.label}</div>
+                    <div class="stat-value">${stat.value}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function loadSites() {
+            const response = await fetch(`${API_BASE}/sites?page_size=10`);
+            const data = await response.json();
+            
+            const tbody = document.querySelector('#sites-table tbody');
+            tbody.innerHTML = data.sites.map(site => `
+                <tr>
+                    <td><code>${site.onion_address}</code></td>
+                    <td>${site.category || 'Unknown'}</td>
+                    <td>
+                        <span class="status-badge ${getRiskClass(site.risk_level)}">
+                            ${site.risk_level || 'Unknown'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="status-badge ${getStatusClass(site)}">
+                            ${getStatusText(site)}
+                        </span>
+                    </td>
+                    <td>${formatDate(site.last_checked)}</td>
+                </tr>
+            `).join('');
+        }
+        
+        async function loadCharts() {
+            const response = await fetch(`${API_BASE}/stats`);
+            const stats = await response.json();
+            
+            // Category chart
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            const categoryData = {
+                labels: stats.categories.map(c => c.category || 'Unknown'),
+                datasets: [{
+                    data: stats.categories.map(c => c.count),
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444',
+                        '#06b6d4', '#84cc16', '#f97316', '#ec4899', '#64748b'
+                    ]
+                }]
+            };
+            
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+            
+            categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: categoryData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#e2e8f0' }
+                        }
+                    }
+                }
+            });
+            
+            // Discovery trend chart
+            const discoveryCtx = document.getElementById('discoveryChart').getContext('2d');
+            const discoveryData = {
+                labels: stats.discovery_trend.map(d => d.date),
+                datasets: [{
+                    label: 'New Discoveries',
+                    data: stats.discovery_trend.map(d => d.discoveries),
+                    borderColor: '#10b981',
+                    backgroundColor: '#10b98120',
+                    fill: true,
+                    tension: 0.4
+                }]
+            };
+            
+            if (discoveryChart) {
+                discoveryChart.destroy();
+            }
+            
+            discoveryChart = new Chart(discoveryCtx, {
+                type: 'line',
+                data: discoveryData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#e2e8f0' } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' } },
+                        y: { ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+        
+        async function triggerDiscovery() {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Running...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/discover`, { method: 'POST' });
+                const result = await response.json();
+                
+                alert(`Discovery scheduled: ${result.message}`);
+                
+                // Refresh data after a short delay
+                setTimeout(refreshData, 5000);
+            } catch (error) {
+                alert('Failed to trigger discovery');
+            } finally {
+                button.disabled = false;
+                button.textContent = '🔍 Run Discovery';
+            }
+        }
+        
+        function showAlert(message) {
+            const banner = document.getElementById('alert-banner');
+            const messageElement = document.getElementById('alert-message');
+            
+            messageElement.textContent = message;
+            banner.classList.add('show');
+        }
+        
+        function hideAlert() {
+            const banner = document.getElementById('alert-banner');
+            banner.classList.remove('show');
+        }
+        
+        function getRiskClass(riskLevel) {
+            switch (riskLevel) {
+                case 'critical': return 'status-critical';
+                case 'high': return 'status-review';
+                default: return 'status-active';
+            }
+        }
+        
+        function getStatusClass(site) {
+            if (site.requires_review) return 'status-review';
+            if (site.is_honeypot) return 'status-critical';
+            return 'status-active';
+        }
+        
+        function getStatusText(site) {
+            if (site.requires_review) return 'Needs Review';
+            if (site.is_honeypot) return 'Honeypot';
+            return 'Active';
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'Never';
+            
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+    </script>
+</body>
+</html>
