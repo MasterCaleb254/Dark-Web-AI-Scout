@@ -76,8 +76,36 @@ database:
     port: 6379
     db: 0
     
+# API Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  cors_origins: ["http://localhost:3000", "http://localhost:8000"]
+
+# Scheduler Configuration
+scheduler:
+  workers: 3
+  discovery_interval: 3600  # 1 hour
+  classification_batch_size: 10
+  maintenance_hour: 3  # 3 AM
+
 # Monitoring Configuration
 monitoring:
-  log_level: "INFO"
-  metrics_port: 9090
   health_check_interval: 60
+  alerting:
+    enabled: false
+    email:
+      smtp_host: ""
+      smtp_port: 587
+      smtp_user: ""
+      smtp_password: ""
+      to_emails: []
+    slack:
+      webhook_url: ""
+
+# Dashboard Configuration
+dashboard:
+  enabled: true
+  port: 3000
+  auto_open: true
