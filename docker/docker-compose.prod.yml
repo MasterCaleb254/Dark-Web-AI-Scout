@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: arachne-postgres
+    environment:
+      POSTGRES_DB: arachne
+      POSTGRES_USER: arachne
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - arachne-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: arachne-redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - arachne-network
+    restart: unless-stopped
+
+  tor-proxy:
+    image: dperson/torproxy:latest
+    container_name: arachne-tor
+    environment:
+      TOR_Password: ${TOR_PASSWORD}
+    volumes:
+      - tor_data:/var/lib/tor
+    networks:
+      - arachne-network
+    restart: unless-stopped
+
+  arachne-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arachne-api
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TOR_PASSWORD=${TOR_PASSWORD}
+    volumes:
+      - ./configs:/app/configs
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - tor-proxy
+    networks:
+      - arachne-network
+    restart: unless-stopped
+    command: ["arachne", "api", "serve", "--host", "0.0.0.0", "--port", "8000"]
+
+  arachne-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arachne-scheduler
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - TOR_PASSWORD=${TOR_PASSWORD}
+    volumes:
+      - ./configs:/app/configs
+      - ./data:/app/data
+    depends_on:
+      - postgres
+      - redis
+      - tor-proxy
+    networks:
+      - arachne-network
+    restart: unless-stopped
+    command: ["arachne", "system", "start", "--workers", "3"]
+
+  nginx:
+    image: nginx:alpine
+    container_name: arachne-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - arachne-api
+    networks:
+      - arachne-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  tor_data:
+
+networks:
+  arachne-network:
+    driver: bridge
