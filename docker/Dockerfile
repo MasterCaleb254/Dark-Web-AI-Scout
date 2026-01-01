@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
+RUN pip install --n11`1q`   11o-cache-dir -e .
 
 # Copy application code
 COPY . .
